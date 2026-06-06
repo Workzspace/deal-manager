@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import type { Area, City } from '../types';
-import { formatINR } from '../format';
 import Header from '../components/Header';
 import NameForm from '../components/NameForm';
 
@@ -67,7 +66,7 @@ export default function AreasPage() {
       <Header
         title={city?.name || 'City'}
         subtitle="Areas & colonies"
-        onBack={() => navigate('/')}
+        onBack={() => navigate('/cities')}
       />
 
       <main className="content">
@@ -113,11 +112,6 @@ export default function AreasPage() {
                     <strong>{s?.closed || 0}</strong>
                     <span>Closed</span>
                   </div>
-                </div>
-
-                <div className="portfolio">
-                  <span className="muted">Active portfolio</span>
-                  <strong>{formatINR(s?.active_value)}</strong>
                 </div>
               </div>
             );

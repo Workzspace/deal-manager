@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import type { Area, Deal, DealInput, DealStatus } from '../types';
-import { formatINR, STATUS_LABELS, STATUS_ORDER } from '../format';
+import { STATUS_LABELS, STATUS_ORDER } from '../format';
 import Header from '../components/Header';
 import DealCard from '../components/DealCard';
 import DealForm from '../components/DealForm';
@@ -43,13 +43,10 @@ export default function DealsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Stats are calculated from the loaded deals so they update instantly.
+  // Per-status counts, calculated from the loaded deals so they update instantly.
   const stats = useMemo(() => {
-    const s = { total: deals.length, available: 0, negotiation: 0, hold: 0, sold: 0, activeValue: 0 };
-    for (const d of deals) {
-      s[d.status]++;
-      if (d.status !== 'sold') s.activeValue += d.asking_price || 0;
-    }
+    const s = { total: deals.length, available: 0, negotiation: 0, hold: 0, sold: 0 };
+    for (const d of deals) s[d.status]++;
     return s;
   }, [deals]);
 
@@ -101,18 +98,6 @@ export default function DealsPage() {
       </Header>
 
       <main className="content">
-        {/* Area summary */}
-        <div className="summary-bar">
-          <div>
-            <span className="muted">Active portfolio value</span>
-            <strong className="big">{formatINR(stats.activeValue)}</strong>
-          </div>
-          <div className="summary-counts">
-            <span className="dot-available" /> {stats.available} available
-            <span className="dot-sold" /> {stats.sold} closed
-          </div>
-        </div>
-
         {loading && <p className="muted center">Loading…</p>}
         {error && <p className="form-error">{error}</p>}
 

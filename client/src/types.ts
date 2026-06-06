@@ -15,7 +15,6 @@ export interface AreaStats {
   negotiating: number | null;
   hold: number | null;
   closed: number | null;
-  active_value: number | null;
 }
 
 export interface Area {

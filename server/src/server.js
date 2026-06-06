@@ -118,8 +118,7 @@ app.get('/api/cities/:cityId/areas', (req, res) => {
         SUM(CASE WHEN status = 'available'   THEN 1 ELSE 0 END) AS available,
         SUM(CASE WHEN status = 'negotiation' THEN 1 ELSE 0 END) AS negotiating,
         SUM(CASE WHEN status = 'hold'        THEN 1 ELSE 0 END) AS hold,
-        SUM(CASE WHEN status = 'sold'        THEN 1 ELSE 0 END) AS closed,
-        SUM(CASE WHEN status != 'sold' THEN COALESCE(asking_price, 0) ELSE 0 END) AS active_value
+        SUM(CASE WHEN status = 'sold'        THEN 1 ELSE 0 END) AS closed
      FROM deals WHERE area_id = ?`
   );
 

@@ -1,9 +1,8 @@
-// Sticky top bar shown on every screen: optional back button, title, a logout
-// button, and a global search box that jumps to the search page as you type.
+// Sticky top bar shown on every screen: optional back button, title, and a
+// global search box that jumps to the search page as you type.
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth';
 
 interface Props {
   title: string;
@@ -17,7 +16,6 @@ interface Props {
 
 export default function Header({ title, subtitle, onBack, searchValue = '', children }: Props) {
   const navigate = useNavigate();
-  const { logout } = useAuth();
   const [q, setQ] = useState(searchValue);
 
   function onSearch(value: string) {
@@ -40,9 +38,6 @@ export default function Header({ title, subtitle, onBack, searchValue = '', chil
           <h1 className="topbar-title">{title}</h1>
           {subtitle && <p className="topbar-subtitle">{subtitle}</p>}
         </div>
-        <button className="icon-btn" aria-label="Log out" title="Log out" onClick={logout}>
-          ⏻
-        </button>
       </div>
 
       <div className="search-wrap">
