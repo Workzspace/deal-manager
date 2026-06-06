@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+client/dist/
+client/*.tsbuildinfo
+
+# Database files (created locally by the server)
+server/data.db
+server/data.db-shm
+server/data.db-wal
+
+# Environment secrets (keep .env.example, ignore the real one)
+server/.env
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
