@@ -10,9 +10,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '..', 'public');
 mkdirSync(PUBLIC, { recursive: true });
 
-// Teal brand color (#0f766e) and white.
-const TEAL = [15, 118, 110];
-const WHITE = [255, 255, 255];
+// Luxury palette: warm ink frame (#1c1b19) with a champagne-gold tile (#b08d57).
+const INK = [28, 27, 25];
+const GOLD = [176, 141, 87];
 
 function makePng(size, filename) {
   // Build raw RGBA pixels.
@@ -27,7 +27,7 @@ function makePng(size, filename) {
     for (let x = 0; x < size; x++) {
       const inBlock =
         x >= margin && x < size - margin && y >= margin && y < size - margin;
-      const [r, g, b] = inBlock ? WHITE : TEAL;
+      const [r, g, b] = inBlock ? GOLD : INK;
       const off = y * rowLen + 1 + x * bytesPerPixel;
       raw[off] = r;
       raw[off + 1] = g;

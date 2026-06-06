@@ -25,7 +25,7 @@ export default function Login() {
       <div className="login-card">
         <div className="login-logo">PL</div>
         <h1>Property Ledger</h1>
-        <p className="muted">Sign in to manage your deals.</p>
+        <p className="muted">Property Portfolio Management</p>
         <form onSubmit={handleSubmit}>
           <label className="field">
             <span>Password</span>
