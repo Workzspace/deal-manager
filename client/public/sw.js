@@ -1,30 +1,30 @@
-// Service worker for Property Ledger.
+// Service worker for Deal Manager.
 //
-// What it does:
-//  - Caches the app's files (the "shell") so it opens instantly and even works
-//    offline once it has been loaded at least once.
-//  - For API calls (/api/...) it always tries the network first so you see the
-//    latest data; if the network is down it falls back to the last cached copy.
+// Strategy:
+//  - The page (HTML) uses NETWORK-FIRST so you always get the latest version
+//    after a deploy; it falls back to the cached page only when offline.
+//  - Hashed build assets (JS/CSS, which never change for a given filename) use
+//    CACHE-FIRST for instant loads.
+//  - API calls (/api/...) use NETWORK-FIRST so data is fresh, with the last
+//    response cached as an offline fallback.
 //
-// Bump CACHE_VERSION whenever you change the app to force phones to update.
-const CACHE_VERSION = 'property-ledger-v1';
-const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
+// Bump CACHE_VERSION whenever the caching logic changes (clears old caches).
+const CACHE_VERSION = 'deal-manager-v2';
+const APP_SHELL = ['/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL))
-  );
+  event.waitUntil(caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL)));
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  // Remove old caches from previous versions.
+  // Remove caches from previous versions so stale files don't linger.
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)))
-    )
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
@@ -32,8 +32,9 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return; // never cache writes
 
   const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return; // ignore cross-origin (e.g. fonts CDN)
 
-  // API calls: network-first, fall back to cache when offline.
+  // API: network-first, fall back to last cached response when offline.
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request)
@@ -47,15 +48,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App files: cache-first, fall back to network.
+  // Page navigations: network-first so a new deploy is picked up immediately.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_VERSION).then((c) => c.put('/index.html', copy));
+          return res;
+        })
+        .catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // Hashed static assets: cache-first (immutable), then network.
   event.respondWith(
-    caches.match(request).then((cached) => cached || fetch(request).then((res) => {
-      // Cache same-origin static assets as we fetch them (JS/CSS bundles).
-      if (url.origin === self.location.origin) {
-        const copy = res.clone();
-        caches.open(CACHE_VERSION).then((c) => c.put(request, copy));
-      }
-      return res;
-    }).catch(() => caches.match('/index.html')))
+    caches.match(request).then(
+      (cached) =>
+        cached ||
+        fetch(request).then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE_VERSION).then((c) => c.put(request, copy));
+          }
+          return res;
+        })
+    )
   );
 });
