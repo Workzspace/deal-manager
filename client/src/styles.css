@@ -586,6 +586,75 @@ a {
   color: var(--ink-soft);
 }
 
+/* Card detail sections (seller / buyers / notes) */
+.card-section {
+  margin-top: 14px;
+}
+.card-section-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.card-section-value {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.buyer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.buyer-item {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 9px 12px;
+}
+.buyer-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.buyer-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.buyer-offer {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--gold-deep);
+  font-variant-numeric: lining-nums tabular-nums;
+  white-space: nowrap;
+}
+.buyer-sub {
+  margin-top: 3px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.buyer-note {
+  color: var(--muted);
+}
+.card-notes {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
 /* ---------- Status badges (soft tinted pills) ---------- */
 .badge {
   display: inline-block;

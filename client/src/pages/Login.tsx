@@ -51,7 +51,7 @@ export default function Login() {
         <h1 className="login-name">{OWNER_NAME}</h1>
         <p className="login-brand">
           <span className="brand-mark" aria-hidden="true" />
-          Property Ledger · Bathinda
+          Deal Manager · Bathinda
         </p>
 
         <div className="pin-area" onClick={() => inputRef.current?.focus()}>
