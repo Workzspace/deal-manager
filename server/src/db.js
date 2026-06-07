@@ -1,71 +1,104 @@
-// Database setup using Node's built-in SQLite (node:sqlite).
+// Database layer — PostgreSQL (works great with Supabase + Vercel).
 //
-// We use the built-in module instead of a package like better-sqlite3 so there
-// is NOTHING to compile and NO extra install step that can fail on Windows.
-// It's synchronous (no async/await needed), which keeps the code simple.
-// The whole database lives in a single file: data.db
-import { DatabaseSync } from 'node:sqlite';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+// Why Postgres now? On Vercel the server runs as "serverless functions" that
+// don't keep a local hard drive, so a SQLite file would be wiped between
+// requests. A hosted Postgres (Supabase) keeps all data in one place so every
+// device stays in sync.
+//
+// Connection:
+//   - In production set DATABASE_URL to your Supabase connection string.
+//   - With NO DATABASE_URL we fall back to an in-memory database (pg-mem) so you
+//     can run/try the app locally with zero setup. NOTE: that in-memory data is
+//     NOT saved — it resets when the server restarts. Use DATABASE_URL for real
+//     data.
+import pg from 'pg';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+let pool;
+let initPromise;
 
-// The .db file is stored one level up, inside the /server folder.
-const DB_PATH = join(__dirname, '..', 'data.db');
+// Lazily create (and cache) the connection pool. Caching at module scope means
+// a serverless function reuses the same pool across requests in a warm instance.
+async function getPool() {
+  if (pool) return pool;
 
-const db = new DatabaseSync(DB_PATH);
+  if (process.env.DATABASE_URL) {
+    pool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      // Supabase requires SSL. We don't verify the chain (managed service).
+      ssl: process.env.PGSSL === 'disable' ? false : { rejectUnauthorized: false },
+      max: 3,
+    });
+  } else {
+    // No database configured → in-memory Postgres for quick local testing.
+    const { newDb } = await import('pg-mem');
+    const adapter = newDb().adapters.createPg();
+    pool = new adapter.Pool();
+    console.warn(
+      '[db] No DATABASE_URL set — using an in-memory database. Data will NOT be saved.'
+    );
+  }
+  return pool;
+}
 
-// WAL mode = better performance and safer concurrent reads/writes
-// (important because several phones may use the app at once).
-db.exec('PRAGMA journal_mode = WAL');
-// Make sure foreign keys (relationships between tables) are enforced.
-db.exec('PRAGMA foreign_keys = ON');
+// Run a query. Returns the pg result ({ rows, rowCount, ... }).
+export async function query(text, params) {
+  const p = await getPool();
+  return p.query(text, params);
+}
 
-// Create the tables if they don't already exist.
-// The hierarchy is: City -> Area -> Deal -> Buyers
-db.exec(`
-  CREATE TABLE IF NOT EXISTS cities (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    name        TEXT NOT NULL,
-    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-  );
+// Borrow a dedicated client for a transaction (BEGIN/COMMIT/ROLLBACK).
+export async function getClient() {
+  const p = await getPool();
+  return p.connect();
+}
 
-  CREATE TABLE IF NOT EXISTS areas (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    city_id     INTEGER NOT NULL,
-    name        TEXT NOT NULL,
-    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE CASCADE
-  );
+// Create the tables if they don't already exist. Cached so it only runs once
+// per warm instance, even though it's awaited on every request (cheap).
+export function init() {
+  if (!initPromise) initPromise = createSchema();
+  return initPromise;
+}
 
-  CREATE TABLE IF NOT EXISTS deals (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    area_id         INTEGER NOT NULL,
-    plot_no         TEXT NOT NULL,
-    width_ft        REAL,
-    length_ft       REAL,
-    gaj             REAL,
-    status          TEXT NOT NULL DEFAULT 'available',
-    asking_price    REAL,
-    expected_price  REAL,
-    seller_name     TEXT,
-    seller_phone    TEXT,
-    notes           TEXT,
-    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (area_id) REFERENCES areas(id) ON DELETE CASCADE
-  );
+async function createSchema() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS cities (
+      id          SERIAL PRIMARY KEY,
+      name        TEXT NOT NULL,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
 
-  CREATE TABLE IF NOT EXISTS buyers (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    deal_id       INTEGER NOT NULL,
-    name          TEXT NOT NULL,
-    phone         TEXT,
-    offer_amount  REAL,
-    note          TEXT,
-    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (deal_id) REFERENCES deals(id) ON DELETE CASCADE
-  );
-`);
+    CREATE TABLE IF NOT EXISTS areas (
+      id          SERIAL PRIMARY KEY,
+      city_id     INTEGER NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+      name        TEXT NOT NULL,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
 
-export default db;
+    CREATE TABLE IF NOT EXISTS deals (
+      id              SERIAL PRIMARY KEY,
+      area_id         INTEGER NOT NULL REFERENCES areas(id) ON DELETE CASCADE,
+      plot_no         TEXT NOT NULL,
+      width_ft        DOUBLE PRECISION,
+      length_ft       DOUBLE PRECISION,
+      gaj             DOUBLE PRECISION,
+      status          TEXT NOT NULL DEFAULT 'available',
+      asking_price    DOUBLE PRECISION,
+      expected_price  DOUBLE PRECISION,
+      seller_name     TEXT,
+      seller_phone    TEXT,
+      notes           TEXT,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS buyers (
+      id            SERIAL PRIMARY KEY,
+      deal_id       INTEGER NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
+      name          TEXT NOT NULL,
+      phone         TEXT,
+      offer_amount  DOUBLE PRECISION,
+      note          TEXT,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+}

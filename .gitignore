@@ -5,6 +5,9 @@ node_modules/
 client/dist/
 client/*.tsbuildinfo
 
+# Vercel
+.vercel
+
 # Database files (created locally by the server)
 server/data.db
 server/data.db-shm

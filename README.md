@@ -34,13 +34,17 @@ phones in the family can use it and stay in sync.
 | --------- | ------------------------------------------------------- |
 | Frontend  | React + TypeScript + Vite                               |
 | Backend   | Node.js + Express (REST API)                            |
-| Database  | SQLite via Node's **built-in** `node:sqlite` (no native build needed) |
-| Auth      | Shared password → JWT token                             |
-| PWA       | Web manifest + service worker                           |
+| Database  | PostgreSQL (hosted on **Supabase**) via `pg`            |
+| Hosting   | **Vercel** (frontend + API as serverless functions)    |
+| Auth      | Shared 4-digit PIN → JWT token                          |
+| PWA       | Web manifest + service worker + install button          |
 
-> **Why built-in SQLite?** It needs no compilation, so there's nothing to break
-> during install on Windows/Mac/Linux. The whole database is one file:
-> `server/data.db`.
+> **Database:** All data lives in one hosted Postgres database so every phone
+> stays in sync. In production set `DATABASE_URL` to your Supabase connection
+> string. For quick local testing with **no setup**, the server falls back to an
+> in-memory database (data is not saved) — see below.
+>
+> 👉 To put it online, follow **[DEPLOY.md](DEPLOY.md)**.
 
 ---
 
@@ -48,19 +52,22 @@ phones in the family can use it and stay in sync.
 
 ```
 Dream Estate/
+├── api/
+│   └── [...path].js        # Vercel serverless entry (re-exports the Express app)
 ├── server/                 # Backend REST API
 │   ├── src/
-│   │   ├── server.js       # Express app + all API routes
-│   │   ├── db.js           # Database connection + table schema
-│   │   ├── auth.js         # Login + auth middleware
+│   │   ├── app.js          # Express app + all API routes (shared by local + Vercel)
+│   │   ├── server.js       # Local dev server (starts app.js on a port)
+│   │   ├── db.js           # Postgres connection + table schema
+│   │   ├── auth.js         # Login (PIN) + auth middleware
 │   │   └── seed.js         # Fills the DB with starter data
-│   ├── .env.example        # Copy to .env and set your password/secret
+│   ├── .env.example        # Copy to .env and set DATABASE_URL / PIN / secret
 │   └── package.json
 │
 ├── client/                 # Frontend React app
 │   ├── src/
 │   │   ├── pages/          # Cities, Areas, Deals, Search, Login
-│   │   ├── components/     # DealCard, DealForm, BottomSheet, Header, …
+│   │   ├── components/     # DealCard, DealForm, BottomSheet, InstallPrompt, …
 │   │   ├── api.ts          # Talks to the backend
 │   │   ├── format.ts       # Indian price + gaj formatting
 │   │   ├── auth.tsx        # Login state
@@ -68,7 +75,9 @@ Dream Estate/
 │   ├── public/             # manifest, service worker, icons
 │   └── package.json
 │
-├── package.json            # Convenience scripts to run everything
+├── vercel.json             # Vercel build + routing config
+├── DEPLOY.md               # Step-by-step deploy guide
+├── package.json            # Convenience scripts + serverless deps
 └── README.md
 ```
 
@@ -76,8 +85,7 @@ Dream Estate/
 
 ## 🚀 Running It Locally
 
-You'll need **Node.js 22.5 or newer** (Node 24 recommended) because the app uses
-the built-in SQLite module. Check with `node --version`.
+You'll need **Node.js 18 or newer**. Check with `node --version`.
 
 ### 1. Install dependencies
 
@@ -87,9 +95,9 @@ From the project root (`Dream Estate/`):
 npm run install:all
 ```
 
-(That installs both `server` and `client`. Or run `npm install` inside each folder.)
+(Installs the root, `server`, and `client` packages.)
 
-### 2. Set your password (optional but recommended)
+### 2. Set your PIN & secret (optional)
 
 ```bash
 cd server
@@ -97,10 +105,14 @@ copy .env.example .env      # Windows
 # cp .env.example .env       # Mac/Linux
 ```
 
-Then open `server/.env` and change `APP_PASSWORD` and `JWT_SECRET`.
-If you skip this, the default password is **`family123`**.
+Then open `server/.env`:
+- `APP_PASSWORD` — the 4-digit login PIN (default **`2561`**)
+- `JWT_SECRET` — any long random string
+- `DATABASE_URL` — *(optional locally)* your Supabase connection string.
+  **Leave it blank to run on a temporary in-memory database** (great for trying
+  things out — but the data resets each restart). Set it to save & sync real data.
 
-### 3. Add the starter data
+### 3. Add starter data (only if using a real DATABASE_URL)
 
 ```bash
 npm run seed
@@ -108,6 +120,9 @@ npm run seed
 
 This creates **Bathinda** with **Ganpati Enclave** (one example plot,
 45×50 ft = 250 gaj) and an empty **Park Panorama**.
+
+> Skipping the database entirely? The in-memory mode still works — just add a
+> city/area/plot in the app to try it out.
 
 ### 4. Start the two servers (two terminals)
 
@@ -123,38 +138,29 @@ npm run client
 
 ### 5. Open the app
 
-Go to **http://localhost:5173** and log in with your password
-(default `family123`).
+Go to **http://localhost:5173** and log in with your PIN (default `2561`).
 
 > The frontend automatically forwards `/api` requests to the backend, so you
 > only ever open the `5173` address.
 
 ---
 
-## 📱 Using It On Your Phone (same Wi-Fi)
+## 🌍 Deploy It (go live for the whole family)
 
-1. Find your computer's local IP (e.g. `192.168.1.5`).
-2. Start the frontend so it's reachable on the network:
-   ```bash
-   npm run dev --prefix client -- --host
-   ```
-3. On your phone's browser, open `http://YOUR_IP:5173`.
-4. Use the browser menu → **Add to Home Screen** to install it like an app.
-
-> For real multi-phone use across the internet, deploy the backend (e.g. a small
-> VPS or a Node host) and the frontend (e.g. Vercel), and point the frontend's
-> `/api` proxy / fetch base at your deployed backend URL.
+See **[DEPLOY.md](DEPLOY.md)** for a 15-minute, beginner-friendly walkthrough:
+create a free Supabase database, push to GitHub, import into Vercel, and install
+it on every phone as an app. All free.
 
 ---
 
-## 🏗️ Building for Production
+## 🏗️ Building the Frontend
 
 ```bash
 npm run build
 ```
 
-This creates an optimised frontend in `client/dist/`. Serve those static files
-from any host, and run the `server/` backend wherever it can reach the database.
+This creates an optimised frontend in `client/dist/`. (Vercel runs this for you
+automatically on deploy.)
 
 ---
 

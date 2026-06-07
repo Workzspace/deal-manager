@@ -9,6 +9,7 @@ import CitiesPage from './pages/CitiesPage';
 import AreasPage from './pages/AreasPage';
 import DealsPage from './pages/DealsPage';
 import SearchPage from './pages/SearchPage';
+import InstallPrompt from './components/InstallPrompt';
 
 // When the app opens, jump straight into the default city (Bathinda) so the
 // broker lands on their areas immediately instead of a city list.
@@ -55,13 +56,16 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<HomeRedirect />} />
-      <Route path="/cities" element={<CitiesPage />} />
-      <Route path="/cities/:cityId" element={<AreasPage />} />
-      <Route path="/areas/:areaId" element={<DealsPage />} />
-      <Route path="/search" element={<SearchPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<HomeRedirect />} />
+        <Route path="/cities" element={<CitiesPage />} />
+        <Route path="/cities/:cityId" element={<AreasPage />} />
+        <Route path="/areas/:areaId" element={<DealsPage />} />
+        <Route path="/search" element={<SearchPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <InstallPrompt />
+    </>
   );
 }
