@@ -3,7 +3,7 @@
 // they're converted to numbers only when saving.
 import { useEffect, useState } from 'react';
 import type { Buyer, Deal, DealInput, DealStatus } from '../types';
-import { gajFromFeet, sqFtFromFeet, STATUS_LABELS, STATUS_ORDER } from '../format';
+import { formatINR, gajFromFeet, sqFtFromFeet, STATUS_LABELS, STATUS_ORDER } from '../format';
 import BottomSheet from './BottomSheet';
 
 interface Props {
@@ -27,6 +27,13 @@ const emptyBuyer = (): BuyerRow => ({ name: '', phone: '', offer_amount: '', not
 function toNum(s: string): number | null {
   const n = parseFloat(s);
   return isNaN(n) ? null : n;
+}
+
+// Live "= ₹48 L" helper shown under a price input as the user types.
+function PriceHint({ value }: { value: string }) {
+  const n = toNum(value);
+  if (n == null || n <= 0) return null;
+  return <span className="field-hint">= {formatINR(n)}</span>;
 }
 
 export default function DealForm({ open, deal, onClose, onSave, onDelete }: Props) {
@@ -245,6 +252,7 @@ export default function DealForm({ open, deal, onClose, onSave, onDelete }: Prop
             onChange={(e) => setAsking(e.target.value)}
             placeholder="5200000"
           />
+          <PriceHint value={asking} />
         </label>
         <label className="field">
           <span>Expected price (₹)</span>
@@ -254,6 +262,7 @@ export default function DealForm({ open, deal, onClose, onSave, onDelete }: Prop
             onChange={(e) => setExpected(e.target.value)}
             placeholder="5000000"
           />
+          <PriceHint value={expected} />
         </label>
       </div>
 
@@ -314,6 +323,7 @@ export default function DealForm({ open, deal, onClose, onSave, onDelete }: Prop
                 onChange={(e) => updateBuyer(i, 'offer_amount', e.target.value)}
                 placeholder="4800000"
               />
+              <PriceHint value={b.offer_amount} />
             </label>
             <label className="field">
               <span>Note</span>

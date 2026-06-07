@@ -830,6 +830,15 @@ a {
   font-size: 0.8rem;
   color: var(--gold-deep);
 }
+/* Live formatted-price helper under a price input (e.g. "= ₹48 L") */
+.field-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gold-deep);
+  font-variant-numeric: lining-nums tabular-nums;
+}
 .form-error {
   background: rgba(179, 38, 30, 0.07);
   color: var(--danger);

@@ -1,6 +1,6 @@
 {
-  "name": "Property Ledger",
-  "short_name": "Ledger",
+  "name": "Deal Manager",
+  "short_name": "Deal Manager",
   "description": "Manage real estate deals across cities, areas and plots.",
   "start_url": "/",
   "scope": "/",
