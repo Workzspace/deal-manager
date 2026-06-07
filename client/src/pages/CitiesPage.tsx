@@ -5,9 +5,12 @@ import { api } from '../api';
 import type { City } from '../types';
 import Header from '../components/Header';
 import NameForm from '../components/NameForm';
+import Skeleton from '../components/Skeleton';
+import { useToast } from '../components/Toast';
 
 export default function CitiesPage() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -44,6 +47,7 @@ export default function CitiesPage() {
     if (editing) await api.updateCity(editing.id, name);
     else await api.createCity(name);
     setSheetOpen(false);
+    toast(editing ? 'City updated' : 'City added');
     await load();
   }
 
@@ -51,6 +55,7 @@ export default function CitiesPage() {
     if (!editing) return;
     await api.deleteCity(editing.id);
     setSheetOpen(false);
+    toast('City deleted');
     await load();
   }
 
@@ -59,13 +64,17 @@ export default function CitiesPage() {
       <Header title="Property Ledger" subtitle="Your cities" />
 
       <main className="content">
-        {loading && <p className="muted center">Loading…</p>}
+        {loading && <Skeleton variant="row" count={3} />}
         {error && <p className="form-error">{error}</p>}
 
         {!loading && cities.length === 0 && (
           <div className="empty">
-            <p>No cities yet.</p>
-            <p className="muted">Add your first city to get started.</p>
+            <div className="empty-emoji">🏙️</div>
+            <p>No cities yet</p>
+            <p className="muted">Add a city to start tracking plots there.</p>
+            <button className="btn btn-primary" onClick={openNew}>
+              Add your first city
+            </button>
           </div>
         )}
 

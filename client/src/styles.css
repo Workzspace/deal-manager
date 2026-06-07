@@ -393,9 +393,8 @@ a {
 }
 .row-card p {
   margin: 0;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  font-size: 0.82rem;
+  color: var(--muted);
 }
 .row-actions {
   display: flex;
@@ -534,9 +533,7 @@ a {
 }
 .card-location {
   margin: 3px 0 0;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 .card-size {
@@ -554,9 +551,7 @@ a {
 }
 .card-prices .label {
   display: block;
-  font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  font-size: 0.78rem;
   color: var(--muted);
   margin-bottom: 3px;
 }
@@ -622,21 +617,28 @@ a {
 /* ---------- Empty states ---------- */
 .empty {
   text-align: center;
-  padding: 64px 16px;
+  padding: 56px 16px;
 }
 .empty p {
-  margin: 6px 0;
+  margin: 4px 0;
 }
-.empty p:first-child {
+.empty-emoji {
+  font-size: 3rem;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+.empty .empty-emoji + p {
   font-family: var(--serif);
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   color: var(--ink);
+}
+.empty .btn {
+  margin-top: 18px;
 }
 .result-count {
   margin: 0 0 14px;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  font-size: 0.82rem;
+  color: var(--muted);
 }
 
 /* ---------- Bottom sheet ---------- */
@@ -717,10 +719,9 @@ a {
 }
 .field > span {
   display: block;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink-soft);
   margin-bottom: 7px;
 }
 .field input,
@@ -836,31 +837,45 @@ a {
   text-align: center;
 }
 .login-logo {
-  width: 72px;
-  height: 72px;
-  margin: 0 auto 4px;
-  border-radius: 18px;
-  background: linear-gradient(150deg, var(--gold), var(--gold-deep));
-  color: #fff;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 18px;
+  border-radius: 22px;
+  background: radial-gradient(120% 120% at 30% 20%, #fff, #f3ecdf);
+  border: 1px solid var(--line);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--serif);
-  font-weight: 700;
-  font-size: 1.7rem;
-  box-shadow: 0 10px 24px -10px rgba(143, 111, 63, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  font-size: 2.6rem;
+  line-height: 1;
+  box-shadow: 0 12px 28px -14px rgba(28, 27, 25, 0.4);
 }
-.login-card h1 {
-  margin: 18px 0 6px;
+.login-eyebrow {
+  margin: 0 0 2px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.login-name {
+  margin: 0 0 6px;
   font-family: var(--serif);
   font-weight: 600;
-  font-size: 2rem;
+  font-size: 2.1rem;
+  line-height: 1.05;
   letter-spacing: 0.01em;
 }
-.login-card > .muted {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
+.login-brand {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.brand-mark {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, var(--gold), var(--gold-deep));
 }
 
 /* PIN entry */
@@ -871,9 +886,7 @@ a {
 }
 .pin-label {
   margin: 0 0 16px;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+  font-size: 0.88rem;
   color: var(--muted);
 }
 .pin-boxes {
@@ -927,6 +940,113 @@ a {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-6px); }
   75% { transform: translateX(6px); }
+}
+
+/* ---------- Toasts ---------- */
+.toast-wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(90px + env(safe-area-inset-bottom));
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  padding: 0 16px;
+}
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 90vw;
+  background: var(--ink);
+  color: #fff;
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 12px 30px -10px rgba(28, 27, 25, 0.5);
+  animation: toast-in 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.toast-success .toast-icon {
+  background: var(--available);
+  color: #fff;
+}
+.toast-error {
+  background: var(--danger);
+}
+.toast-error .toast-icon {
+  background: rgba(255, 255, 255, 0.2);
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---------- Loading skeletons ---------- */
+.sk-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.sk-line,
+.sk-box {
+  background: linear-gradient(90deg, #ece6dc 25%, #f5f1ea 37%, #ece6dc 63%);
+  background-size: 400% 100%;
+  border-radius: 8px;
+  animation: shimmer 1.4s ease infinite;
+}
+.sk-line {
+  height: 14px;
+  margin: 8px 0;
+}
+.sk-title {
+  height: 22px;
+  width: 55%;
+  margin-bottom: 14px;
+}
+.sk-sub {
+  width: 40%;
+}
+.sk-wide {
+  width: 80%;
+}
+.sk-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 6px;
+}
+.sk-box {
+  height: 52px;
+  margin: 0;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
 }
 
 /* ---------- PWA install pill ---------- */

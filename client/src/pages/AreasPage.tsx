@@ -5,11 +5,14 @@ import { api } from '../api';
 import type { Area, City } from '../types';
 import Header from '../components/Header';
 import NameForm from '../components/NameForm';
+import Skeleton from '../components/Skeleton';
+import { useToast } from '../components/Toast';
 
 export default function AreasPage() {
   const { cityId } = useParams();
   const id = Number(cityId);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [city, setCity] = useState<City | null>(null);
   const [areas, setAreas] = useState<Area[]>([]);
@@ -51,6 +54,7 @@ export default function AreasPage() {
     if (editing) await api.updateArea(editing.id, name);
     else await api.createArea(id, name);
     setSheetOpen(false);
+    toast(editing ? 'Area updated' : 'Area added');
     await load();
   }
 
@@ -58,6 +62,7 @@ export default function AreasPage() {
     if (!editing) return;
     await api.deleteArea(editing.id);
     setSheetOpen(false);
+    toast('Area deleted');
     await load();
   }
 
@@ -70,13 +75,17 @@ export default function AreasPage() {
       />
 
       <main className="content">
-        {loading && <p className="muted center">Loading…</p>}
+        {loading && <Skeleton variant="area" count={2} />}
         {error && <p className="form-error">{error}</p>}
 
         {!loading && areas.length === 0 && (
           <div className="empty">
-            <p>No areas yet.</p>
+            <div className="empty-emoji">🏘️</div>
+            <p>No areas yet</p>
             <p className="muted">Add a colony or area to start adding plots.</p>
+            <button className="btn btn-primary" onClick={openNew}>
+              Add an area
+            </button>
           </div>
         )}
 

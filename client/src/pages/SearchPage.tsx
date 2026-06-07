@@ -6,11 +6,13 @@ import type { Deal, DealInput } from '../types';
 import Header from '../components/Header';
 import DealCard from '../components/DealCard';
 import DealForm from '../components/DealForm';
+import { useToast } from '../components/Toast';
 
 export default function SearchPage() {
   const [params] = useSearchParams();
   const q = params.get('q') || '';
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [results, setResults] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,6 +49,7 @@ export default function SearchPage() {
   async function handleSave(data: DealInput) {
     if (editing) await api.updateDeal(editing.id, data);
     setEditing(null);
+    toast('Plot updated');
     // Refresh results to reflect the edit.
     if (q.trim()) setResults(await api.search(q));
   }
@@ -54,6 +57,7 @@ export default function SearchPage() {
   async function handleDelete(deal: Deal) {
     await api.deleteDeal(deal.id);
     setEditing(null);
+    toast('Plot deleted');
     if (q.trim()) setResults(await api.search(q));
   }
 

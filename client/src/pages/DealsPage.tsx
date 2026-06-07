@@ -8,6 +8,8 @@ import { STATUS_LABELS, STATUS_ORDER } from '../format';
 import Header from '../components/Header';
 import DealCard from '../components/DealCard';
 import DealForm from '../components/DealForm';
+import Skeleton from '../components/Skeleton';
+import { useToast } from '../components/Toast';
 
 type Filter = 'all' | DealStatus;
 
@@ -15,6 +17,7 @@ export default function DealsPage() {
   const { areaId } = useParams();
   const id = Number(areaId);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [area, setArea] = useState<Area | null>(null);
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -65,12 +68,14 @@ export default function DealsPage() {
     if (editing) await api.updateDeal(editing.id, data);
     else await api.createDeal(id, data);
     setSheetOpen(false);
+    toast(editing ? 'Plot updated' : 'Plot added');
     await load();
   }
 
   async function handleDelete(deal: Deal) {
     await api.deleteDeal(deal.id);
     setSheetOpen(false);
+    toast('Plot deleted');
     await load();
   }
 
@@ -98,13 +103,17 @@ export default function DealsPage() {
       </Header>
 
       <main className="content">
-        {loading && <p className="muted center">Loading…</p>}
+        {loading && <Skeleton variant="card" count={3} />}
         {error && <p className="form-error">{error}</p>}
 
         {!loading && deals.length === 0 && (
           <div className="empty">
-            <p>No plots in this area yet.</p>
-            <p className="muted">Tap + to add your first plot.</p>
+            <div className="empty-emoji">📐</div>
+            <p>No plots here yet</p>
+            <p className="muted">Add your first plot in this area.</p>
+            <button className="btn btn-primary" onClick={openNew}>
+              Add a plot
+            </button>
           </div>
         )}
 

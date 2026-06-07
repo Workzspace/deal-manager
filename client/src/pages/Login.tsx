@@ -1,8 +1,10 @@
-// Login screen — a single shared 4-digit PIN for the whole business.
+// Login screen — a personal, single 4-digit PIN sign-in for the business owner.
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth';
 
 const PIN_LENGTH = 4;
+// The business owner this app belongs to (shown on the welcome screen).
+const OWNER_NAME = 'Vinod Singla';
 
 export default function Login() {
   const { login } = useAuth();
@@ -32,7 +34,6 @@ export default function Login() {
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (busy) return;
-    // Keep digits only, max 4.
     const digits = e.target.value.replace(/\D/g, '').slice(0, PIN_LENGTH);
     setPin(digits);
     setError('');
@@ -42,23 +43,33 @@ export default function Login() {
   return (
     <div className="login-screen">
       <div className="login-card">
-        <div className="login-logo">PL</div>
-        <h1>Property Ledger</h1>
-        <p className="muted">Deal Management</p>
+        <div className="login-logo" role="img" aria-label="Property">
+          🏡
+        </div>
+
+        <p className="login-eyebrow">Welcome back 👋</p>
+        <h1 className="login-name">{OWNER_NAME}</h1>
+        <p className="login-brand">
+          <span className="brand-mark" aria-hidden="true" />
+          Property Ledger · Bathinda
+        </p>
 
         <div className="pin-area" onClick={() => inputRef.current?.focus()}>
-          <p className="pin-label">Enter your 4-digit PIN</p>
+          <p className="pin-label">Enter your 4-digit PIN to continue</p>
 
-          {/* Visible PIN boxes (filled dots reflect how many digits typed) */}
           <div className={`pin-boxes ${error ? 'pin-error' : ''}`}>
             {Array.from({ length: PIN_LENGTH }).map((_, i) => (
-              <div key={i} className={`pin-box ${i < pin.length ? 'filled' : ''} ${i === pin.length && !busy ? 'active' : ''}`}>
+              <div
+                key={i}
+                className={`pin-box ${i < pin.length ? 'filled' : ''} ${
+                  i === pin.length && !busy ? 'active' : ''
+                }`}
+              >
                 {i < pin.length ? '•' : ''}
               </div>
             ))}
           </div>
 
-          {/* The real input is invisible but captures typing & the numeric keypad */}
           <input
             ref={inputRef}
             className="pin-input"
