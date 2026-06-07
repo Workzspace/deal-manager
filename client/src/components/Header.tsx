@@ -2,7 +2,7 @@
 // global search box that jumps to the search page as you type.
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface Props {
   title: string;
@@ -16,12 +16,19 @@ interface Props {
 
 export default function Header({ title, subtitle, onBack, searchValue = '', children }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [q, setQ] = useState(searchValue);
 
   function onSearch(value: string) {
     setQ(value);
     const trimmed = value.trim();
-    if (trimmed) navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+    if (!trimmed) return;
+    // While already on the search page, replace the history entry instead of
+    // pushing a new one for every keystroke — otherwise Back walks through the
+    // search letter by letter.
+    navigate(`/search?q=${encodeURIComponent(trimmed)}`, {
+      replace: location.pathname === '/search',
+    });
   }
 
   return (

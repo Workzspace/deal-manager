@@ -57,6 +57,7 @@ export default function DealForm({ open, deal, onClose, onSave, onDelete }: Prop
   useEffect(() => {
     if (!open) return;
     setError('');
+    setSaving(false); // reset so a previous save doesn't leave it stuck on "Saving…"
     if (deal) {
       setPlotNo(deal.plot_no);
       setWidth(deal.width_ft != null ? String(deal.width_ft) : '');

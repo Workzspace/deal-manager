@@ -39,10 +39,28 @@ function computeGaj(width, length, gaj) {
   return null;
 }
 
-// Attach the buyers list to a deal object.
+// Attach the buyers list to a single deal object.
 async function withBuyers(deal) {
   const { rows } = await query('SELECT * FROM buyers WHERE deal_id = $1 ORDER BY id', [deal.id]);
   return { ...deal, buyers: rows };
+}
+
+// Attach buyers to a LIST of deals using a single query (avoids N+1 round-trips,
+// which matters a lot for response speed).
+async function attachBuyers(deals) {
+  if (deals.length === 0) return [];
+  const ids = deals.map((d) => d.id);
+  const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+  const { rows } = await query(
+    `SELECT * FROM buyers WHERE deal_id IN (${placeholders}) ORDER BY id`,
+    ids
+  );
+  const byDeal = new Map();
+  for (const b of rows) {
+    if (!byDeal.has(b.deal_id)) byDeal.set(b.deal_id, []);
+    byDeal.get(b.deal_id).push(b);
+  }
+  return deals.map((d) => ({ ...d, buyers: byDeal.get(d.id) || [] }));
 }
 
 // Save a deal's buyers list inside a transaction (delete old, insert new).
@@ -132,24 +150,34 @@ app.delete(
 app.get(
   '/api/cities/:cityId/areas',
   wrap(async (req, res) => {
-    const { rows: areas } = await query('SELECT * FROM areas WHERE city_id = $1 ORDER BY name', [
-      req.params.cityId,
-    ]);
-    const withStats = await Promise.all(
-      areas.map(async (a) => {
-        const { rows } = await query(
-          `SELECT
-              COUNT(*)::int AS total,
-              SUM(CASE WHEN status = 'available'   THEN 1 ELSE 0 END)::int AS available,
-              SUM(CASE WHEN status = 'negotiation' THEN 1 ELSE 0 END)::int AS negotiating,
-              SUM(CASE WHEN status = 'hold'        THEN 1 ELSE 0 END)::int AS hold,
-              SUM(CASE WHEN status = 'sold'        THEN 1 ELSE 0 END)::int AS closed
-           FROM deals WHERE area_id = $1`,
-          [a.id]
-        );
-        return { ...a, stats: rows[0] };
-      })
+    // One query: areas + their deal counts (no N+1 per-area queries).
+    const { rows } = await query(
+      `SELECT a.id, a.city_id, a.name, a.created_at,
+          COUNT(d.id)::int AS total,
+          COALESCE(SUM(CASE WHEN d.status = 'available'   THEN 1 ELSE 0 END), 0)::int AS available,
+          COALESCE(SUM(CASE WHEN d.status = 'negotiation' THEN 1 ELSE 0 END), 0)::int AS negotiating,
+          COALESCE(SUM(CASE WHEN d.status = 'hold'        THEN 1 ELSE 0 END), 0)::int AS hold,
+          COALESCE(SUM(CASE WHEN d.status = 'sold'        THEN 1 ELSE 0 END), 0)::int AS closed
+       FROM areas a
+       LEFT JOIN deals d ON d.area_id = a.id
+       WHERE a.city_id = $1
+       GROUP BY a.id, a.city_id, a.name, a.created_at
+       ORDER BY a.name`,
+      [req.params.cityId]
     );
+    const withStats = rows.map((r) => ({
+      id: r.id,
+      city_id: r.city_id,
+      name: r.name,
+      created_at: r.created_at,
+      stats: {
+        total: r.total,
+        available: r.available,
+        negotiating: r.negotiating,
+        hold: r.hold,
+        closed: r.closed,
+      },
+    }));
     res.json(withStats);
   })
 );
@@ -216,7 +244,7 @@ app.get(
         req.params.areaId,
       ]);
     }
-    res.json(await Promise.all(result.rows.map(withBuyers)));
+    res.json(await attachBuyers(result.rows));
   })
 );
 
@@ -339,7 +367,7 @@ app.get(
        LIMIT 100`,
       [like]
     );
-    res.json(await Promise.all(rows.map(withBuyers)));
+    res.json(await attachBuyers(rows));
   })
 );
 

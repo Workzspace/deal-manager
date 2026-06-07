@@ -32,6 +32,7 @@ export default function NameForm({
     if (open) {
       setName(initialValue);
       setError('');
+      setBusy(false); // reset so a previous save doesn't leave it stuck on "Saving…"
     }
   }, [open, initialValue]);
 
