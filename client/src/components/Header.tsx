@@ -1,35 +1,38 @@
 // Sticky top bar shown on every screen: optional back button, title, and a
-// global search box that jumps to the search page as you type.
+// global search box.
+//
+// Two modes for the search box:
+//  - "entry" mode (default, on cities/areas/deals pages): tapping the box opens
+//    the dedicated Search screen. It does NOT search in place.
+//  - "live" mode (on the Search screen, when `onSearchChange` is provided): the
+//    box is controlled by the parent and updates local state on every keystroke
+//    WITHOUT navigating — so the mobile keyboard stays up while you type.
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface Props {
   title: string;
   subtitle?: string;
   onBack?: () => void;
-  // Set the search box's starting text (used on the search page itself).
   searchValue?: string;
+  // Provide this to put the search box in live/controlled mode (Search screen).
+  onSearchChange?: (value: string) => void;
   // Extra controls rendered under the title row (e.g. status filter).
   children?: ReactNode;
 }
 
-export default function Header({ title, subtitle, onBack, searchValue = '', children }: Props) {
+export default function Header({
+  title,
+  subtitle,
+  onBack,
+  searchValue = '',
+  onSearchChange,
+  children,
+}: Props) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [q, setQ] = useState(searchValue);
-
-  function onSearch(value: string) {
-    setQ(value);
-    const trimmed = value.trim();
-    if (!trimmed) return;
-    // While already on the search page, replace the history entry instead of
-    // pushing a new one for every keystroke — otherwise Back walks through the
-    // search letter by letter.
-    navigate(`/search?q=${encodeURIComponent(trimmed)}`, {
-      replace: location.pathname === '/search',
-    });
-  }
+  const liveMode = typeof onSearchChange === 'function';
+  const [entryValue, setEntryValue] = useState('');
 
   return (
     <header className="topbar">
@@ -53,8 +56,16 @@ export default function Header({ title, subtitle, onBack, searchValue = '', chil
           className="search-input"
           type="search"
           placeholder="Search plots, sellers, buyers, areas…"
-          value={q}
-          onChange={(e) => onSearch(e.target.value)}
+          value={liveMode ? searchValue : entryValue}
+          autoFocus={liveMode}
+          // Entry mode: opening the box takes you to the Search screen.
+          onFocus={() => {
+            if (!liveMode) navigate('/search');
+          }}
+          onChange={(e) => {
+            if (liveMode) onSearchChange!(e.target.value);
+            else setEntryValue(e.target.value);
+          }}
         />
       </div>
 
